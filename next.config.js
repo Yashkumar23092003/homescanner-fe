@@ -1,6 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   optimizeFonts: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**", // Allow all domains
+      },
+      {
+        protocol: "http",
+        hostname: "**", // Allow all domains (if needed)
+      },
+    ],
+  },
   async rewrites() {
     return [
       {

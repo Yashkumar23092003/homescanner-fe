@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"app\\\\(screens)\\\\map\\\\page.jsx -> ./MapComponent\":{\"id\":\"app\\\\(screens)\\\\map\\\\page.jsx -> ./MapComponent\",\"files\":[\"static/css/_app-pages-browser_app_screens_map_MapComponent_js.css\",\"static/chunks/_app-pages-browser_app_screens_map_MapComponent_js.js\"]},\"app\\\\(screens)\\\\places\\\\page.jsx -> react-leaflet\":{\"id\":\"app\\\\(screens)\\\\places\\\\page.jsx -> react-leaflet\",\"files\":[\"static/chunks/_app-pages-browser_node_modules_react-leaflet_lib_index_js.js\"]}}"
