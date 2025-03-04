@@ -1,0 +1,20 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+
+/* Additional styles */
+/* Additional styles */
+@import "additional-styles/utility-patterns.css";
+@import "additional-styles/theme.css";
+
+@import "tailwindcss/utilities";
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap');
+
+html, body {
+    font-family: 'Lexend', ;
+}
+
+/* Add a universal selector to ensure Lexend is used everywhere */
+
+.scale-wrapper {
+    transform: scale(1.6);
+}
