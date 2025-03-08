@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { MapPin, Share2 } from "lucide-react"; 
+import { MapPin, Share2, Filter } from "lucide-react";
 import axios from "axios";
 
 const Map = dynamic(() => import("../map/MapComponent"), { ssr: false });
@@ -13,6 +13,82 @@ const fixImageUrl = (url) => {
   const idPart = parts[1].split("_")[0];
   return `https://images.nobroker.in/images/${idPart}/${parts[1]}`;
 };
+
+const FilterModal = ({ isOpen, onClose, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-end md:hidden">
+      <div className="bg-white w-full max-w-[320px] h-full overflow-y-auto">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-lg font-semibold">Filters</h2>
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="p-4">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FilterContent = ({
+  searchLocation,
+  setSearchLocation,
+  budget,
+  setBudget,
+  bhk,
+  setBhk,
+  propertyType,
+  setPropertyType
+}) => (
+  <div className="flex flex-col gap-4">
+    <input
+      type="text"
+      placeholder="Search by City, Locality"
+      className="border p-2 rounded-3xl w-full"
+      value={searchLocation}
+      onChange={(e) => setSearchLocation(e.target.value)}
+    />
+    <select
+      className="border p-2 rounded-3xl w-full"
+      value={budget}
+      onChange={(e) => setBudget(e.target.value)}
+    >
+      <option value="">Select Budget</option>
+      <option value="₹1 Cr">₹1 Cr</option>
+      <option value="₹2 Cr">₹2 Cr</option>
+      <option value="₹3 Cr">₹3 Cr</option>
+      <option value="₹8 Cr">₹8 Cr</option>
+    </select>
+    <select
+      className="border p-2 rounded-3xl w-full"
+      value={bhk}
+      onChange={(e) => setBhk(e.target.value)}
+    >
+      <option value="">Select BHK</option>
+      <option value="1 BHK">1 BHK</option>
+      <option value="2 BHK">2 BHK</option>
+      <option value="3 BHK">3 BHK</option>
+      <option value="Plot">Plot</option>
+    </select>
+    <select
+      className="border p-2 rounded-3xl w-full"
+      value={propertyType}
+      onChange={(e) => setPropertyType(e.target.value)}
+    >
+      <option value="">Select Property Type</option>
+      <option value="Flat">Flat</option>
+      <option value="Apartment">Apartment</option>
+      <option value="Plot">Plot</option>
+    </select>
+  </div>
+);
 
 export default function ShortlistPage() {
   const [shortlistType, setShortlistType] = useState("manual");
@@ -28,6 +104,8 @@ export default function ShortlistPage() {
 
   const [showSourcesPopup, setShowSourcesPopup] = useState(null);
 
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   useEffect(() => {
     const storedProperties = localStorage.getItem("shortlisted");
     if (shortlistType == "ai") {
@@ -39,7 +117,20 @@ export default function ShortlistPage() {
   }, [shortlistType]);
   
 
-  const filteredProperties = shortListedProperties;
+  const filteredProperties = shortListedProperties.filter(property => {
+    const locationMatch = !searchLocation || 
+      property.address?.toLowerCase().includes(searchLocation.toLowerCase()) ||
+      property.name?.toLowerCase().includes(searchLocation.toLowerCase());
+
+    const budgetMatch = !budget || property.price?.includes(budget);
+
+    const bhkMatch = !bhk || property.name?.includes(bhk);
+
+    const typeMatch = !propertyType || 
+      property.name?.toLowerCase().includes(propertyType.toLowerCase());
+
+    return locationMatch && budgetMatch && bhkMatch && typeMatch;
+  });
 
   const handleCopy = (property) => {
     const propertyDetails = `${property.price}, ${property.title}, ${property.location}`;
@@ -76,25 +167,31 @@ export default function ShortlistPage() {
       <div className="w-full md:w-1/2 p-6 bg-gray-100 overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-lg">Shortlists</h2>
-          <div
-            className="relative w-14 h-8 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition-all duration-300"
-            onClick={() =>
-              setShortlistType(shortlistType === "manual" ? "ai" : "manual")
-            }
-          >
+          <div className="flex items-center gap-4">
+            <button
+              className="md:hidden p-2 hover:bg-gray-200 rounded-full"
+              onClick={() => setIsFilterOpen(true)}
+            >
+              <Filter size={20} />
+            </button>
             <div
-              className={`w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
-                shortlistType === "manual"
-                  ? "translate-x-0 bg-yellow-500 border border-yellow-600"
-                  : "translate-x-6 bg-blue-500 border border-blue-600"
-              }`}
-            />
-            <span className="absolute left-2 text-xs font-semibold text-gray-700">M</span>
-            <span className="absolute right-2 text-xs font-semibold text-gray-700">AI</span>
+              className="relative w-14 h-8 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer"
+              onClick={() => setShortlistType(shortlistType === "manual" ? "ai" : "manual")}
+            >
+              <div
+                className={`w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
+                  shortlistType === "manual"
+                    ? "translate-x-0 bg-yellow-500 border border-yellow-600"
+                    : "translate-x-6 bg-blue-500 border border-blue-600"
+                }`}
+              />
+              <span className="absolute left-2 text-xs font-semibold text-gray-700">M</span>
+              <span className="absolute right-2 text-xs font-semibold text-gray-700">AI</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 mb-4">
+        <div className="hidden md:flex md:flex-wrap gap-4 mb-4">
           <input
             type="text"
             placeholder="Search by City, Locality"
@@ -102,8 +199,6 @@ export default function ShortlistPage() {
             value={searchLocation}
             onChange={(e) => setSearchLocation(e.target.value)}
           />
-
-          {/* Budget Filter */}
           <select
             className="border p-2 rounded-3xl w-full md:w-1/4"
             value={budget}
@@ -115,8 +210,6 @@ export default function ShortlistPage() {
             <option value="₹3 Cr">₹3 Cr</option>
             <option value="₹8 Cr">₹8 Cr</option>
           </select>
-
-          {/* BHK Filter */}
           <select
             className="border p-2 rounded-3xl w-full md:w-1/4"
             value={bhk}
@@ -128,8 +221,6 @@ export default function ShortlistPage() {
             <option value="3 BHK">3 BHK</option>
             <option value="Plot">Plot</option>
           </select>
-
-          {/* Property Type Filter */}
           <select
             className="border p-2 rounded-3xl w-full md:w-2/4"
             value={propertyType}
@@ -142,31 +233,85 @@ export default function ShortlistPage() {
           </select>
         </div>
 
-        {/* PROPERTY LIST */}
+        <FilterModal 
+          isOpen={isFilterOpen} 
+          onClose={() => setIsFilterOpen(false)}
+        >
+          <div className="flex flex-col gap-4">
+            <input
+              type="text"
+              placeholder="Search by City, Locality"
+              className="border p-2 rounded-3xl w-full"
+              value={searchLocation}
+              onChange={(e) => setSearchLocation(e.target.value)}
+            />
+            <select
+              className="border p-2 rounded-3xl w-full"
+              value={budget}
+              onChange={(e) => setBudget(e.target.value)}
+            >
+              <option value="">Select Budget</option>
+              <option value="₹1 Cr">₹1 Cr</option>
+              <option value="₹2 Cr">₹2 Cr</option>
+              <option value="₹3 Cr">₹3 Cr</option>
+              <option value="₹8 Cr">₹8 Cr</option>
+            </select>
+            <select
+              className="border p-2 rounded-3xl w-full"
+              value={bhk}
+              onChange={(e) => setBhk(e.target.value)}
+            >
+              <option value="">Select BHK</option>
+              <option value="1 BHK">1 BHK</option>
+              <option value="2 BHK">2 BHK</option>
+              <option value="3 BHK">3 BHK</option>
+              <option value="Plot">Plot</option>
+            </select>
+            <select
+              className="border p-2 rounded-3xl w-full"
+              value={propertyType}
+              onChange={(e) => setPropertyType(e.target.value)}
+            >
+              <option value="">Select Property Type</option>
+              <option value="Flat">Flat</option>
+              <option value="Apartment">Apartment</option>
+              <option value="Plot">Plot</option>
+            </select>
+          </div>
+        </FilterModal>
+
+        <div className="mb-4">
+          <p className="text-gray-700 text-sm">
+            Showing <span className="font-semibold">{filteredProperties.length}</span> 
+            {" "}of{" "}
+            <span className="font-semibold">{shortListedProperties.length}</span> properties
+          </p>
+        </div>
+
         {filteredProperties?.map((property) => (
           <div key={property.id} className="bg-white p-4 rounded shadow mb-4 relative">
-            {/* Row container for image and details */}
-            <div className="flex flex-row">
-              {console.log(property.image && property.image.length > 0 ? fixImageUrl(property.image[0]) : "https://img.squareyards.com/secondaryPortal/IN_638698620300780078-1512241220302030.jpg?aio=w-360;h-210;crop")}
-              <Image
-                src={property.image && property.image.length > 0 ? fixImageUrl(property.image[0]) : "https://img.squareyards.com/secondaryPortal/IN_638698620300780078-1512241220302030.jpg?aio=w-360;h-210;crop"}
-                width={200}
-                height={200}
-                className="rounded mb-4"
-              />
-              <div className="ml-4">
+            <div className="flex flex-col md:flex-row">
+              <div className="w-full md:w-48 h-48 md:h-auto relative mb-4 md:mb-0">
+                <Image
+                  src={property.image && property.image.length > 0 
+                    ? fixImageUrl(property.image[0]) 
+                    : "https://img.squareyards.com/secondaryPortal/IN_638698620300780078-1512241220302030.jpg?aio=w-360;h-210;crop"
+                  }
+                  width={200}
+                  height={200}
+                  className="rounded w-full h-full object-cover"
+                  alt={property.name}
+                />
+              </div>
+              
+              <div className="md:ml-4 flex-1">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="text-2xl font-bold pb-2">{property.name}</div>
                     <div className="text-xl font-semibold">{property.price}</div>
                     <div className="text-sm text-gray-600 mt-1">{property.title}</div>
                   </div>
-                  <button
-                    className="text-gray-600 hover:text-gray-800"
-                    onClick={() => {
-                      // Currently does nothing
-                    }}
-                  >
+                  <button className="text-gray-600 hover:text-gray-800">
                     <Share2 size={20} />
                   </button>
                 </div>
@@ -186,12 +331,11 @@ export default function ShortlistPage() {
                   </div>
                 </div>
 
-                <p className="text-sm text-gray-600 mt-2">{property.description || "Are you looking for a spacious and luxurious Flats in the bustling city of Bangalore. Look no further! We present to you a fabulous 3 BHK apartment in the renowned Godrej Lakeside Orchard project on Sarjapur a total area of......."}</p>
+                <p className="text-sm text-gray-600 mt-2">{property.description}</p>
               </div>
             </div>
 
-            {/* Button Row */}
-            <div className="flex items-center mt-4 gap-3">
+            <div className="flex flex-wrap items-center mt-4 gap-3">
               <div className="relative inline-block text-left">
                 <button
                   className="bg-green-500 text-white px-4 py-2 rounded flex items-center"
@@ -262,9 +406,11 @@ export default function ShortlistPage() {
         ))}
       </div>
 
-      <div className="w-full md:w-1/2 bg-gray-300">
+      <div className="hidden md:block w-full md:w-1/2 h-[300px] md:h-auto bg-gray-300">
         <Map properties={filteredProperties} selectedLocation={selectedLocation} zoom={17} />
       </div>
+
+  
     </div>
   );
 }

@@ -18,10 +18,34 @@ const fixImageUrl = (url) => {
    Static Components
 -----------------------*/
 
-// SearchBar component with a search button
-const SearchBar = React.memo(({ searchTerm, setSearchTerm, handleSearch }) => (
-  <div className="flex justify-center pt-4 pb-2">
-    <div className="flex items-center w-[40rem] text-lg border border-black rounded-lg overflow-hidden">
+// Add new FilterModal component
+const FilterModal = React.memo(({ isOpen, onClose, ...props }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-end md:hidden">
+      <div className="bg-white w-full max-w-[320px] h-full overflow-y-auto">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-lg font-semibold">Filters</h2>
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="p-4">
+          <SidebarContent {...props} />
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// Update SearchBar component to include filter button
+const SearchBar = React.memo(({ searchTerm, setSearchTerm, handleSearch, onFilterClick }) => (
+  <div className="flex justify-center pt-4 pb-2 px-4">
+    <div className="flex items-center w-full max-w-[40rem] text-lg border border-black rounded-lg overflow-hidden">
       <input
         type="text"
         placeholder="Search by locality, property name, etc."
@@ -29,6 +53,14 @@ const SearchBar = React.memo(({ searchTerm, setSearchTerm, handleSearch }) => (
         onChange={(e) => setSearchTerm(e.target.value)}
         className="flex-1 px-4 py-2 focus:outline-none border-none"
       />
+      <button
+        className="md:hidden px-4 py-2 border-l border-black"
+        onClick={onFilterClick}
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+      </button>
       <button
         className="px-6 py-2 bg-[#D9D9D9] text-black border-l border-black"
         onClick={handleSearch}
@@ -39,8 +71,15 @@ const SearchBar = React.memo(({ searchTerm, setSearchTerm, handleSearch }) => (
   </div>
 ));
 
-// Sidebar component with all filter options
-const Sidebar = React.memo(({
+// Update Sidebar component styles to show on desktop
+const Sidebar = React.memo(({ ...props }) => (
+  <aside className="hidden md:block w-2/5 h-fit pr-6 border mr-5 rounded-xl border-gray-500">
+    <SidebarContent {...props} />
+  </aside>
+));
+
+// Create a new SidebarContent component to share between Sidebar and FilterModal
+const SidebarContent = React.memo(({
   selectedBHK,
   handleBHKChange,
   minPrice,
@@ -56,16 +95,16 @@ const Sidebar = React.memo(({
   propertyTypes,
   handlePropertyTypeChange,
 }) => (
-  <aside className="w-2/5 h-fit pr-6 border mr-5 rounded-xl border-gray-500">
+  <>
     {/* BHK Filter */}
     <div className="bg-white rounded-lg p-4 mb-6">
       <h3 className="text-lg font-semibold mb-2 border-b pb-1">BHK Type</h3>
-      <div className="flex flex-row">
+      <div className="flex flex-wrap gap-2">
         {["1", "2", "3", "4"].map((bhk) => (
           <button
             key={bhk}
             onClick={() => handleBHKChange(bhk)}
-            className={`flex items-center text-center p-5 mx-4 h-9 rounded-md ${
+            className={`flex items-center text-center p-2 rounded-md ${
               selectedBHK.includes(bhk) ? "bg-blue-500 text-white" : "bg-gray-200 text-black"
             }`}
           >
@@ -230,10 +269,10 @@ const Sidebar = React.memo(({
         Standalone Building
       </label>
     </div>
-  </aside>
+  </>
 ));
 
-// Component for displaying the property list and pagination
+// Update PropertyList component styles
 const PropertyList = React.memo(({
   property,
   fixImageUrl,
@@ -263,7 +302,7 @@ const PropertyList = React.memo(({
   };
 
   return (
-    <section className="w-3/5">
+    <section className="w-full md:w-3/5">
       <div className="mb-4">
         <p className="text-gray-700 text-sm">
           Showing <span className="font-semibold">{property.length}</span> results
@@ -381,6 +420,7 @@ export default function SearchPage() {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Fetch properties based on current filters and pagination
   const getProperties = async () => {
@@ -486,9 +526,28 @@ export default function SearchPage() {
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         handleSearch={handleSearch}
+        onFilterClick={() => setIsFilterOpen(true)}
       />
-      <main className="flex px-8 py-6">
+      <main className="flex flex-col md:flex-row px-4 md:px-8 py-6">
         <Sidebar
+          selectedBHK={selectedBHK}
+          handleBHKChange={handleBHKChange}
+          minPrice={minPrice}
+          setMinPrice={setMinPrice}
+          maxPrice={maxPrice}
+          setMaxPrice={setMaxPrice}
+          newBuilder={newBuilder}
+          setNewBuilder={setNewBuilder}
+          propertyStatus={propertyStatus}
+          setPropertyStatus={setPropertyStatus}
+          furnishing={furnishing}
+          handleFurnishingChange={handleFurnishingChange}
+          propertyTypes={propertyTypes}
+          handlePropertyTypeChange={handlePropertyTypeChange}
+        />
+        <FilterModal 
+          isOpen={isFilterOpen} 
+          onClose={() => setIsFilterOpen(false)}
           selectedBHK={selectedBHK}
           handleBHKChange={handleBHKChange}
           minPrice={minPrice}
